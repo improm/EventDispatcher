@@ -1,0 +1,6 @@
+node_modules
+dist
+gatsby-config.js
+src/components/seo.js
+.cache
+public

@@ -1,0 +1,21 @@
+{
+  "name": "EventDispatcher class test coverage",
+  "bail": 10,
+  "notify": true,
+  "transform": {
+    "^.+\\.(t|j)sx?$": "ts-jest"
+  },
+  "testRegex": "(/src).*(/^spec/.*|\\.(test|spec))\\.(jsx?|tsx?|ts|js)$",
+  "moduleFileExtensions": ["ts", "tsx", "js"],
+  "collectCoverage": true,
+  "coverageDirectory": "testReport",
+  "coverageThreshold": {
+    "global": {
+      "branches": 80,
+      "functions": 80,
+      "lines": 80,
+      "statements": -30
+    }
+  },
+  "errorOnDeprecated": true
+}

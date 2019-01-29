@@ -1,0 +1,55 @@
+{
+  "name": "eventdispatcher",
+  "version": "1.0.0",
+  "description": "Process events, post events to server in batch using simple configuration",
+  "files": [
+    "lib/**/*"
+  ],
+  "scripts": {
+    "start": "npm run build && npm run executeOutputOnChange",
+    "executeOutputOnChange": "nodemon --exec 'npm run build && node lib/index.js'",
+    "test": "jest --config jestconfig.json",
+    "testCoverage": "npm run test && npm run showTestReport",
+    "showTestReport": "open './testReport/lcov-report/index.html'",
+    "cleanOutputDir": "rimraf lib",
+    "build": "npm run cleanOutputDir && tsc",
+    "prettier": "prettier --write '**/*.{ts,tsx,js,json}' \"src/**/*.js\" --config prettier.config.js",
+    "lint": "tslint -p tsconfig.json",
+    "fix": "npm run lint && npm run prettier",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm test && npm run lint",
+    "preversion": "npm run lint",
+    "version": "npm run format && git add -A src",
+    "postversion": "git push && git push --tags"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/improm/EventDispatcher.git"
+  },
+  "keywords": [
+    "event",
+    "analytics",
+    "event capturing",
+    "event processing",
+    "frontend events",
+    "event handling"
+  ],
+  "author": "Promil Bhardwaj",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/improm/EventDispatcher/issues"
+  },
+  "homepage": "https://github.com/improm/EventDispatcher#readme",
+  "devDependencies": {
+    "@types/jest": "^23.3.13",
+    "jest": "^24.0.0",
+    "opn": "^5.4.0",
+    "prettier": "^1.16.1",
+    "rimraf": "^2.6.3",
+    "ts-jest": "^23.10.5",
+    "ts-node": "^8.0.2",
+    "tslint": "^5.12.1",
+    "tslint-config-prettier": "^1.17.0",
+    "typescript": "^3.2.4"
+  }
+}
