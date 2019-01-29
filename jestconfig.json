@@ -1,6 +1,6 @@
 {
   "name": "EventDispatcher class test coverage",
-  "bail": 10,
+  "bail": false,
   "notify": true,
   "transform": {
     "^.+\\.(t|j)sx?$": "ts-jest"

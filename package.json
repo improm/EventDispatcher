@@ -14,11 +14,11 @@
     "cleanOutputDir": "rimraf lib",
     "build": "npm run cleanOutputDir && tsc",
     "prettier": "prettier --write '**/*.{ts,tsx,js,json}' \"src/**/*.js\" --config prettier.config.js",
-    "lint": "tslint -p tsconfig.json",
-    "fix": "npm run lint && npm run prettier",
+    "tslint": "tslint -p tsconfig.json",
+    "fix": "npm run tslint && npm run prettier",
     "prepare": "npm run build",
-    "prepublishOnly": "npm test && npm run lint",
-    "preversion": "npm run lint",
+    "prepublishOnly": "npm test && npm run tslint",
+    "preversion": "npm run tslint",
     "version": "npm run format && git add -A src",
     "postversion": "git push && git push --tags"
   },
@@ -42,14 +42,15 @@
   "homepage": "https://github.com/improm/EventDispatcher#readme",
   "devDependencies": {
     "@types/jest": "^23.3.13",
-    "jest": "^24.0.0",
-    "opn": "^5.4.0",
-    "prettier": "^1.16.1",
-    "rimraf": "^2.6.3",
-    "ts-jest": "^23.10.5",
-    "ts-node": "^8.0.2",
-    "tslint": "^5.12.1",
-    "tslint-config-prettier": "^1.17.0",
-    "typescript": "^3.2.4"
+    "jest": "24.0.0",
+    "opn": "5.4.0",
+    "prettier": "1.16.1",
+    "rimraf": "2.6.3",
+    "ts-jest": "23.10.5",
+    "ts-node": "8.0.2",
+    "tslint": "5.12.1",
+    "tslint-config-prettier": "1.17.0",
+    "typescript": "3.2.4",
+    "@types/node": "10.12.19"
   }
 }
