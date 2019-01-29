@@ -3,6 +3,6 @@ node_js:
   - "11.6.0"
 cache: npm
 install: 
-  - "cd improm/eventDispatcher && npm install && cd .."
+  - npm install
 script:
   - npm test 
