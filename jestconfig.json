@@ -8,7 +8,7 @@
   "testRegex": "(/src).*(/^spec/.*|\\.(test|spec))\\.(jsx?|tsx?|ts|js)$",
   "moduleFileExtensions": ["ts", "tsx", "js"],
   "collectCoverage": true,
-  "coverageDirectory": "testReport",
+  "coverageDirectory": "coverage",
   "coverageThreshold": {
     "global": {
       "branches": 80,

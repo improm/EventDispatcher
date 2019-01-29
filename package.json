@@ -9,6 +9,7 @@
     "start": "npm run build && npm run executeOutputOnChange",
     "executeOutputOnChange": "nodemon --exec 'npm run build && node lib/index.js'",
     "test": "jest --config jestconfig.json",
+    "jestAndNotifyCoveralls": "jest --config jestconfig.json --coverageReporters=text-lcov | coveralls",
     "testCoverage": "npm run test && npm run showTestReport",
     "showTestReport": "open './testReport/lcov-report/index.html'",
     "cleanOutputDir": "rimraf lib",
@@ -42,6 +43,8 @@
   "homepage": "https://github.com/improm/EventDispatcher#readme",
   "devDependencies": {
     "@types/jest": "^23.3.13",
+    "@types/node": "10.12.19",
+    "coveralls": "^3.0.2",
     "jest": "24.0.0",
     "opn": "5.4.0",
     "prettier": "1.16.1",
@@ -50,7 +53,6 @@
     "ts-node": "8.0.2",
     "tslint": "5.12.1",
     "tslint-config-prettier": "1.17.0",
-    "typescript": "3.2.4",
-    "@types/node": "10.12.19"
+    "typescript": "3.2.4"
   }
 }

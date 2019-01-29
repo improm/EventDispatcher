@@ -1,3 +1,5 @@
+[![Coverage Status](https://coveralls.io/repos/github/improm/EventDispatcher/badge.svg?branch=master)](https://coveralls.io/github/improm/EventDispatcher?branch=master)
+
 # EventDispatcher
 
 Process events, post events to server in batch, enrich events by appendig additonal data using simple configuration.
