@@ -5,8 +5,12 @@ cache: npm
 install: 
   - npm install
 script:
-  - npm run test 
+  - npm run build 
 
 
 after_success:
 - npm run jestAndNotifyCoveralls
+
+notifications:
+    email:
+      - promilbhardwaj.nith@gmail.com
