@@ -14,6 +14,7 @@ export interface IEventDispatcherBasicConfig {
   eventEnricher?: IEventEnricher;
   apiPathToPostEvents?: string;
   methodToPostEvents?: IMethodToPostEvents;
+  storageKeyPrefix?: string;
 }
 
 export interface IEventDispatcherConfigWithApi extends IEventDispatcherBasicConfig {

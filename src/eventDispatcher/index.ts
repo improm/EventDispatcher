@@ -2,13 +2,14 @@
  *  Created by: Promil Bhardwaj
  */
 
-import { IEvent, IEventDispatcherConfig } from './EventDispatcher.d';
+import { IEvent, IEventDispatcherConfig } from './EventDispatcher';
 
 export default class EventDispatcher {
   private EVENT_QUEUE: IEvent[] = [];
 
   private config: IEventDispatcherConfig;
   private UUID: string = '';
+  private storageKeyName: string = '';
 
   constructor(config: IEventDispatcherConfig) {
     this.config = config;
@@ -23,7 +24,7 @@ export default class EventDispatcher {
    * @param forceful
    * @param boolean
    */
-  public sendEvent(eventToSend: IEvent, forceful = false, consoleEvent = false) {
+  public sendEvent(eventToSend: IEvent, forceful = false, consoleEvent = false): void {
     /**
      * this data will be appended to all events
      */
@@ -99,6 +100,20 @@ export default class EventDispatcher {
 
     // attach listener to tab close event
     this.attachWindowCloseEvent();
+
+    this.storageKeyName = this.generateKeyNameForStorage();
+  }
+
+  /**
+   * Generate a keyname for saving events to local storage
+   * @returns string
+   */
+  private generateKeyNameForStorage(): string {
+    if (this.config.storageKeyPrefix) {
+      return this.config.storageKeyPrefix + '_dispatcher_';
+    } else {
+      return 'dispatcher_';
+    }
   }
 
   /**
@@ -119,7 +134,7 @@ export default class EventDispatcher {
    */
   private getEventsFromStorage(): IEvent[] {
     if (this.isLocalStorageAvailable()) {
-      const eventDispatcher = localStorage.getItem('eventDispatcher');
+      const eventDispatcher = localStorage.getItem(this.storageKeyName);
       return eventDispatcher ? JSON.parse(eventDispatcher) : [];
     } else {
       return [];
@@ -132,7 +147,7 @@ export default class EventDispatcher {
    */
   private saveEventsToStorage(events: IEvent[]): void {
     if (this.isLocalStorageAvailable() && Array.isArray(events)) {
-      localStorage.setItem('eventDispatcher', JSON.stringify(events));
+      localStorage.setItem(this.storageKeyName, JSON.stringify(events));
     }
   }
 
@@ -141,7 +156,7 @@ export default class EventDispatcher {
    */
   private emptyLocalStorage() {
     if (this.isLocalStorageAvailable()) {
-      localStorage.removeItem('eventDispatcher');
+      localStorage.removeItem(this.storageKeyName);
     }
   }
 

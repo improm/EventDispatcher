@@ -1,4 +1,5 @@
-import EventDispatcher from './EventDispatcher';
+import EventDispatcher from './index';
+const globalAny: any = global;
 
 test('EventDispatcher is exported', () => {
   expect(typeof EventDispatcher).toBe('function');
@@ -10,17 +11,39 @@ test('EventDispatcher is exported', () => {
 describe('EventDispatcher initialized with api params test cases', () => {
   const handler: EventDispatcher = new EventDispatcher({
     eventsToPostInSingleCall: 5,
-    apiPathToPostEvents: 'http://mockapi.com/',
+    apiPathToPostEvents: 'http://mockapi.com/postevent',
     eventEnricher: (passedEvent: any) => {
       passedEvent.enrichTestKey = 'enrichTestValue';
       return passedEvent;
-    }
+    },
+    storageKeyPrefix: 'storageKeyPrefix'
   });
 
   const publicMethodsExpected = ['sendEvent', 'getEventList', 'clearEvents', 'getUUID'];
 
   afterEach(() => {
     handler.clearEvents();
+  });
+
+  test('apiPathToPostEvents was called with data && forceFlag works on sendEvent', () => {
+    let dataPostedViaFetch: any;
+
+    globalAny.fetch = jest.fn().mockImplementation((apiName) => {
+      return new Promise((resolve, reject) => {
+        dataPostedViaFetch = apiName;
+        resolve({
+          ok: true
+        });
+      });
+    });
+
+    handler.sendEvent(
+      {
+        checkingPostWasCalled: 1
+      },
+      true
+    );
+    expect(dataPostedViaFetch).toBe('http://mockapi.com/postevent');
   });
 
   runTestSuit(handler, publicMethodsExpected);
@@ -66,13 +89,21 @@ describe('EventDispatcher initialized with callback function params test cases',
     /**
      * This event will be submitted immidiately because eventsToPostInSingleCall === 0
      */
-    submissionChecker.sendEvent({
-      sampleEvent: true
-    });
+    submissionChecker.sendEvent(
+      {
+        sampleEvent: true
+      },
+      false,
+      true
+    );
 
-    submissionChecker.sendEvent({
-      sampleEvent: true
-    });
+    submissionChecker.sendEvent(
+      {
+        sampleEvent: true
+      },
+      true,
+      true
+    );
 
     expect(callBackTriggered).toBe(true);
   });
