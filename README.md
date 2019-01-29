@@ -115,8 +115,6 @@ eventService.sendEvent({
 
 ## Supported methods
 
-'sendEvent', 'getEventList', 'clearEvents', 'getUUID'
-
 | Name         | arguments in order                                          | Description                                                                                                                                                                                                                                                                   |
 | ------------ | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | sendEvent    | eventToSend: IEvent; forceful = false; consoleEvent = false | `eventToSend`: event data; `forceful`: ignore the check for `eventsToPostInSingleCall` and call `methodToPostEvents` or `apiPathToPostEvents` immidiately; `consoleEvent`: console.log the event being sent to `eventToSend` method. Called after `eventEnricher` if provided |

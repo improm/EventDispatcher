@@ -1,0 +1,8 @@
+language: node_js
+node_js:
+  - "11.6.0"
+cache: npm
+install: 
+  - "cd eventDispatcher && npm install && cd .."
+script:
+  - cd eventDispatcher && npm test 
