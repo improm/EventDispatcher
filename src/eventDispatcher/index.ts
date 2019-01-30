@@ -2,7 +2,32 @@
  *  Created by: Promil Bhardwaj
  */
 
-import { IEvent, IEventDispatcherConfig } from './EventDispatcher';
+interface IEvent {
+  eventDispatcherUuid?: string;
+  timeStamp?: number;
+  [key: string]: any;
+}
+
+type IEventDispatcherConfig = IEventDispatcherConfigWithApi | IEventDispatcherConfigWithMethod;
+
+type IMethodToPostEvents = (data: any) => Promise<any>;
+type IEventEnricher = (event: IEvent) => any;
+
+interface IEventDispatcherBasicConfig {
+  eventsToPostInSingleCall: number | 1;
+  eventEnricher?: IEventEnricher;
+  apiPathToPostEvents?: string;
+  methodToPostEvents?: IMethodToPostEvents;
+  storageKeyPrefix?: string;
+}
+
+interface IEventDispatcherConfigWithApi extends IEventDispatcherBasicConfig {
+  apiPathToPostEvents: string;
+}
+
+interface IEventDispatcherConfigWithMethod extends IEventDispatcherBasicConfig {
+  methodToPostEvents: IMethodToPostEvents;
+}
 
 export default class EventDispatcher {
   private EVENT_QUEUE: IEvent[] = [];
