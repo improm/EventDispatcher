@@ -44,7 +44,7 @@ If you want to handle posting of events yourself. Pass a callback `methodToPostE
 automatically after `eventsToPostInSingleCall` no of events.
 
 ```javascript
-import EventDispatcher from 'EventDispatcher';
+import EventDispatcher from 'uieventdispatcher';
 
 const eventDispatcher = new EventDispatcher({
   eventsToPostInSingleCall: 5,
@@ -70,7 +70,7 @@ eventDispatcher.sendEvent({
 Encapsulate the EventDispatcher in a global service and use that service in your application code.
 
 ```javascript
-import EventDispatcher from 'EventDispatcher';
+import EventDispatcher from 'uieventdispatcher';
 
 class EventDispatcherService extends EventDispatcher {
   constructor() {
