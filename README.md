@@ -76,8 +76,13 @@ class EventDispatcherService extends EventDispatcher {
   constructor() {
     super({
       eventsToPostInSingleCall: 5,
-      eventEnricher: this.eventEnricher,
-      methodToPostEvents: this.sendEvents,
+      eventEnricher: (event)=>{
+        const modifiedEvent = { ...event, userId: 'user_id_of_loggedin_user'}];
+        super.sendEvent(modifiedEvent);
+      },
+      methodToPostEvents: (events)=>  {
+        // post events to server yourself here
+      },
       storageKeyPrefix: 'application_id_user_id'
     });
   }
@@ -85,12 +90,6 @@ class EventDispatcherService extends EventDispatcher {
   sendEvent(event) {
     const modifiedEvent = [{ ...event }];
     super.sendEvent(modifiedEvent);
-  }
-
-  // called every time sendEvent function is called
-  // append application specific global data to each event in this function
-  eventEnricher(event) {
-    return { ...event, userId: 'user_id_of_loggedin_user' };
   }
 }
 
