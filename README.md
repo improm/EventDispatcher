@@ -1,9 +1,9 @@
 # EventDispatcher
-[![Build Status](https://travis-ci.org/improm/EventDispatcher.svg?branch=master)](https://travis-ci.org/improm/EventDispatcher)     [![Language grade: JavaScript](https://img.shields.io/lgtm/grade/javascript/g/improm/EventDispatcher.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/improm/EventDispatcher/context:javascript) [![Coverage Status](https://coveralls.io/repos/github/improm/EventDispatcher/badge.svg?branch=master)](https://coveralls.io/github/improm/EventDispatcher?branch=master)   [![code style: prettier](https://badgen.now.sh/badge/code%20style/prettier/ff69b4)](https://github.com/prettier/prettier)
 
-
-
-
+[![Build Status](https://travis-ci.org/improm/EventDispatcher.svg?branch=master)](https://travis-ci.org/improm/EventDispatcher)
+[![Language grade: JavaScript](https://img.shields.io/lgtm/grade/javascript/g/improm/EventDispatcher.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/improm/EventDispatcher/context:javascript)
+[![Coverage Status](https://coveralls.io/repos/github/improm/EventDispatcher/badge.svg?branch=master)](https://coveralls.io/github/improm/EventDispatcher?branch=master)
+[![code style: prettier](https://badgen.now.sh/badge/code%20style/prettier/ff69b4)](https://github.com/prettier/prettier)
 
 Process events, post events to server in batch, enrich events by appendig additonal data using simple configuration.
 Persists events in case of browser reload, or quitting. Uses local storage.
@@ -72,11 +72,9 @@ Encapsulate the EventDispatcher in a global service and use that service in your
 ```javascript
 import EventDispatcher from 'EventDispatcher';
 
-export class EventDispatcherService {
-  eventDispatcher;
-
+class EventDispatcherService extends EventDispatcher {
   constructor() {
-    this.eventDispatcher = new EventDispatcher({
+    super({
       eventsToPostInSingleCall: 5,
       eventEnricher: this.eventEnricher,
       methodToPostEvents: this.sendEvents,
@@ -84,8 +82,9 @@ export class EventDispatcherService {
     });
   }
 
-  sendEvent(events) {
-    return this.eventDispatcher.sendEvent(events);
+  sendEvent(event) {
+    const modifiedEvent = [{ ...event }];
+    super.sendEvent(modifiedEvent);
   }
 
   // called every time sendEvent function is called
@@ -94,6 +93,13 @@ export class EventDispatcherService {
     return { ...event, userId: 'user_id_of_loggedin_user' };
   }
 }
+
+/**
+ * Export a instance directly to rest of the application
+ **/
+const eventDispatcher = new EventDispatcherService();
+export default eventDispatcher;
+
 ```
 
 Depending on the use case, use might like to use single instance of `EventDispatcherService` in your whole application.
@@ -101,9 +107,9 @@ Then use this instance in your whole application. For any global changes in futu
 EventDispatcherService and not your whole application code.
 
 ```javascript
-const eventService = new EventDispatcherService();
+import eventDispatcher from 'EventDispatcherService';
 
-eventService.sendEvent({
+eventDispatcher.sendEvent({
   eventType: 'OPENED_POPUP'
 });
 ```
