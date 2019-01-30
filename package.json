@@ -1,6 +1,6 @@
 {
   "name": "uieventdispatcher",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Process events, post events to server in batch using simple configuration",
   "files": [
     "lib/**/*"
@@ -22,7 +22,7 @@
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run tslint",
     "preversion": "npm run tslint",
-    "version": "npm run format && git add -A src",
+    "version": "npm run prettier && git add -A src",
     "postversion": "git push && git push --tags"
   },
   "repository": {
