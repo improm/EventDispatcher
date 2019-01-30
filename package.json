@@ -1,10 +1,12 @@
 {
-  "name": "eventdispatcher",
+  "name": "uieventdispatcher",
   "version": "1.0.0",
   "description": "Process events, post events to server in batch using simple configuration",
   "files": [
     "lib/**/*"
   ],
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "scripts": {
     "start": "npm run build && npm run executeOutputOnChange",
     "executeOutputOnChange": "nodemon --exec 'npm run build && node lib/index.js'",
