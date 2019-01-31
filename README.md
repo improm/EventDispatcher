@@ -1,127 +1,93 @@
 # EventDispatcher
 
-[![Build Status](https://travis-ci.org/improm/EventDispatcher.svg?branch=master)](https://travis-ci.org/improm/EventDispatcher)
-[![Language grade: JavaScript](https://img.shields.io/lgtm/grade/javascript/g/improm/EventDispatcher.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/improm/EventDispatcher/context:javascript)
-[![Coverage Status](https://coveralls.io/repos/github/improm/EventDispatcher/badge.svg?branch=master)](https://coveralls.io/github/improm/EventDispatcher?branch=master)
-[![code style: prettier](https://badgen.now.sh/badge/code%20style/prettier/ff69b4)](https://github.com/prettier/prettier)
+[![Build Status](https://travis-ci.org/improm/EventDispatcher.svg?branch=master)](https://travis-ci.org/improm/EventDispatcher) [![Language grade: JavaScript](https://img.shields.io/lgtm/grade/javascript/g/improm/EventDispatcher.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/improm/EventDispatcher/context:javascript) [![Coverage Status](https://coveralls.io/repos/github/improm/EventDispatcher/badge.svg?branch=master)](https://coveralls.io/github/improm/EventDispatcher?branch=master) [![code style: prettier](https://badgen.now.sh/badge/code%20style/prettier/ff69b4)](https://github.com/prettier/prettier)
 
 Process events, post events to server in batch, enrich events by appendig additonal data using simple configuration.
-Persists events in case of browser reload, or quitting. Uses local storage.
+Persists events in case of browser reload, closing the browser window (local storage used).
 
 ## Usage
 
-EventDispatcher has two modes. One with `apiPathToPostEvents` and second with `methodToPostEvents`.
-
-### using `apiPathToPostEvents`
-
-If you want eventDispatcher to handle posting of events for you. Just provide the api path ,a post request will be
-triggered automatically to that url with data.
+EventDispatcher is an abstract class. So you need to impliment a class that extends `EventDispatcher`. Create a service `EventDispatcherService` that extends `EventDispatcher`.
 
 ```javascript
-import EventDispatcher from 'EventDispatcher';
+// EventDispatcherService.js
+import EventDispatcher from "uieventdispatcher";
 
-const eventDispatcher = new EventDispatcher({
-  eventsToPostInSingleCall: 10,
-  apiPathToPostEvents: 'http://apiToPostData.com/'
-});
-
-eventDispatcher.sendEvent({
-  eventType: 'click',
-  buttonName: 'ADD_TO_CART'
-});
-
-eventDispatcher.sendEvent({
-  eventType: 'scroll',
-  pageName: 'MY_PROFILE'
-});
-```
-
-Handler will save 10 events and automatically post event data to the api http://apiToPostData.com/ on every 11th event.
-
-### using `methodToPostEvents`
-
-If you want to handle posting of events yourself. Pass a callback `methodToPostEvents` and it will be called
-automatically after `eventsToPostInSingleCall` no of events.
-
-```javascript
-import EventDispatcher from 'uieventdispatcher';
-
-const eventDispatcher = new EventDispatcher({
-  eventsToPostInSingleCall: 5,
-  methodToPostEvents: (data) => {
-    // Your implementation here
-    return fetch('http://backendapi.com/', {
-      body: JSON.stringify(data),
-      headers: {
-        customHeaders: 'value'
-      },
-      method: 'POST'
-    });
-  }
-});
-
-eventDispatcher.sendEvent({
-  eventType: 'OPENED_POPUP'
-});
-```
-
-## Advance usage
-
-Encapsulate the EventDispatcher in a global service and use that service in your application code.
-
-```javascript
-import EventDispatcher from 'uieventdispatcher';
-
-class EventDispatcherService extends EventDispatcher {
+export class EventDispatcherService extends EventDispatcher {
   constructor() {
     super({
-      eventsToPostInSingleCall: 5,
-      eventEnricher: (event)=>{
-        const modifiedEvent = { ...event, userId: 'user_id_of_loggedin_user'}];
-        super.sendEvent(modifiedEvent);
-      },
-      methodToPostEvents: (events)=>  {
-        // post events to server yourself here
-      },
-      storageKeyPrefix: 'application_id_user_id'
+      eventsToPostInSingleCall: 1
     });
   }
 
-  sendEvent(event) {
-    const modifiedEvent = [{ ...event }];
-    super.sendEvent(modifiedEvent);
+  eventEnricher(event) {
+    // Modify event if needed
+    event.userId = '1KL';
+    return event;
+  }
+
+  methodToPostEvents(data) {
+    return fetch("http://backend-url.com/api/analytics", {
+      body: JSON.stringify(data),
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json"
+      },
+      method: "POST"
+    });
   }
 }
 
-/**
- * Export a instance directly to rest of the application
- **/
+// Expose the same instance to your whole application 
 const eventDispatcher = new EventDispatcherService();
 export default eventDispatcher;
 
 ```
 
-Depending on the use case, use might like to use single instance of `EventDispatcherService` in your whole application.
-Then use this instance in your whole application. For any global changes in future, you only need to modify
-EventDispatcherService and not your whole application code.
+In your application code
 
-```javascript
+``` javascript
 import eventDispatcher from 'EventDispatcherService';
 
-eventDispatcher.sendEvent({
-  eventType: 'OPENED_POPUP'
-});
+eventDispatcher.sendEvent({ page: 1});
+
+eventDispatcher.getEventList(); 
+/** output
+  
+  [ { page: 1,
+     eventDispatcherUuid: '1548943992704__DEL__126690',   // a unique id generated for eventDispatcher instance
+     timeStamp: 1548943992705,                            // timestamp when sendEvent method was called
+     userId: '1KL'                                        // modification we did in eventEnricher
+    } 
+ ]
+ x
+**/
+
+eventDispatcher.sendEvent({ page: 2}); 
+// This will trigger methodToPostEvents as we defined eventsToPostInSingleCall as 1 
+// and this is 2nd event we are submitting
+
 ```
 
-## Supported Config
+## Config
 
-| Name                     | Type                  | Required | Description                                                                                                                                    |
-| ------------------------ | --------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| eventsToPostInSingleCall | `number`              | true     | Wait for these many events before posting events to `apiPathToPostEvents` or triggering `methodToPostEvents`                                   |
-| eventEnricher            | `IEventEnricher`      | false    | This function is triggered every time send event is called, can be used to append additonal data to each event.                                |
-| apiPathToPostEvents      | `string`              | false    | absolute url, to which event should be posted (eg. http://api.com)                                                                             |
-| methodToPostEvents       | `IMethodToPostEvents` | false    | This function is triggered when after sendEvent method has been called `eventsToPostInSingleCall` times atleast                                |
-| storageKeyPrefix         | `string`              | false    | Appended to the keyName used to save events in localstorage, Provide something unique to prevent conflict across applications / multiple users |
+`EventDispatcher` supports following config keys:
+
+| Name                     | Type                  |   Description  |
+| ------------------------ | --------------------- | -------- | --- |
+| eventsToPostInSingleCall | `number`              | Wait for these many events before triggering `methodToPostEvents`|
+    
+
+
+## Abstract methods
+
+The application need to extend `EventDispatcher` class and impliment these functions.
+
+| Name                     | Type                  |   Description  |
+| ------------------------ | --------------------- | -------- | --- |
+| eventEnricher            | (event: `IEvent`) => any  |  Triggered every time `sendEvent` is called, can be used to append additonal data to each event.|
+| methodToPostEvents       | (data: any) =>  Promise | Triggered when after sendEvent method has been called `eventsToPostInSingleCall` times atleast.|
+| getLocalStorageKeyName   | () => string  | Provide a unique string which will be used to store event in `localStorage`. Should not change on page reload. Bad example: `timeStamp`, good example: a`ppName_userId` |
 
 ## Supported methods
 

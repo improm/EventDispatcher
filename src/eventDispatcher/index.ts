@@ -2,44 +2,60 @@
  *  Created by: Promil Bhardwaj
  */
 
-interface IEvent {
+export interface IEvent {
   eventDispatcherUuid?: string;
   timeStamp?: number;
   [key: string]: any;
 }
 
-type IEventDispatcherConfig = IEventDispatcherConfigWithApi | IEventDispatcherConfigWithMethod;
-
-type IMethodToPostEvents = (data: any) => Promise<any>;
-type IEventEnricher = (event: IEvent) => any;
-
-interface IEventDispatcherBasicConfig {
-  eventsToPostInSingleCall: number | 1;
-  eventEnricher?: IEventEnricher;
-  apiPathToPostEvents?: string;
-  methodToPostEvents?: IMethodToPostEvents;
-  storageKeyPrefix?: string;
+export interface IConfig {
+  eventsToPostInSingleCall: number;
 }
 
-interface IEventDispatcherConfigWithApi extends IEventDispatcherBasicConfig {
-  apiPathToPostEvents: string;
-}
-
-interface IEventDispatcherConfigWithMethod extends IEventDispatcherBasicConfig {
-  methodToPostEvents: IMethodToPostEvents;
-}
-
-export default class EventDispatcher {
+export default abstract class EventDispatcher {
+  /**
+   * club these many events before processing them
+   */
+  private eventsToPostInSingleCall: number = 1;
+  /**
+   * stores the events pushed to EventDispatcher isntance
+   * Always in sync with values stored in local storage
+   */
   private EVENT_QUEUE: IEvent[] = [];
 
-  private config: IEventDispatcherConfig;
+  /**
+   * A unique UUID is appended to each instance of EventDispatcher instance
+   */
   private UUID: string = '';
+
+  /**
+   * EventDispatcher instance uses localStorage to persist events across browser close and reload events
+   * A unqiue key of the sort userId_analyticEvents to prevent overiding of events for multiple users
+   * logging in to the same broswer.
+   */
   private storageKeyName: string = '';
 
-  constructor(config: IEventDispatcherConfig) {
-    this.config = config;
+  constructor(config: IConfig) {
+    this.eventsToPostInSingleCall = config.eventsToPostInSingleCall;
     this.init();
   }
+
+  /**
+   * Called every time sendEvent method called.
+   */
+  public abstract eventEnricher(event: IEvent): any;
+
+  /**
+   * Triggered after sendEvent method has been called
+   * more then eventsToPostInSingleCall times.
+   */
+  public abstract methodToPostEvents(data: any): Promise<any>;
+
+  /**
+   * A unique string to be used as a key to save items to localStorage.
+   * Don't use timestamp. Use something unique for a user. eg. appName_userId
+   */
+  public abstract getLocalStorageKeyName(): string;
 
   /**
    * Method to accept new events from user
@@ -61,16 +77,14 @@ export default class EventDispatcher {
     /**
      * Append some extra data to each event, like user id, page name etc
      */
-    if (this.config.eventEnricher) {
-      modifiedEventToSend = this.config.eventEnricher(modifiedEventToSend);
-    }
+    modifiedEventToSend = this.eventEnricher(modifiedEventToSend);
 
     /**
      * Set this to true in dev environments
      * Might help in debuggind and verifying data
      */
     if (consoleEvent === true) {
-      console.log(modifiedEventToSend);
+      console.log('console.log test', modifiedEventToSend);
     }
     this.addAndProcessEvent(modifiedEventToSend);
 
@@ -99,12 +113,18 @@ export default class EventDispatcher {
     this.EVENT_QUEUE = [];
   }
 
-  /**
-   * returns uuid of this instance
+  /*
+   * Generates a unique UUID every time it is called
+   * A combination of timestamp ,seperator and a random number
    * @returns string
    */
   public getUUID(): string {
-    return this.UUID;
+    if (this.UUID) {
+      return this.UUID;
+    } else {
+      this.UUID = new Date().getTime() + '__DEL__' + Math.floor(Math.random() * 1000000);
+      return this.UUID;
+    }
   }
 
   /**
@@ -114,7 +134,7 @@ export default class EventDispatcher {
    */
   private init(): void {
     // Generate a uuid
-    this.UUID = this.getSessionUUID();
+    this.UUID = this.getUUID();
 
     // Check if already some events are dumped in localstorage
     const eventQueue = this.getEventsFromStorage();
@@ -126,19 +146,7 @@ export default class EventDispatcher {
     // attach listener to tab close event
     this.attachWindowCloseEvent();
 
-    this.storageKeyName = this.generateKeyNameForStorage();
-  }
-
-  /**
-   * Generate a keyname for saving events to local storage
-   * @returns string
-   */
-  private generateKeyNameForStorage(): string {
-    if (this.config.storageKeyPrefix) {
-      return this.config.storageKeyPrefix + '_dispatcher_';
-    } else {
-      return 'dispatcher_';
-    }
+    this.storageKeyName = this.getLocalStorageKeyName();
   }
 
   /**
@@ -159,8 +167,13 @@ export default class EventDispatcher {
    */
   private getEventsFromStorage(): IEvent[] {
     if (this.isLocalStorageAvailable()) {
-      const eventDispatcher = localStorage.getItem(this.storageKeyName);
-      return eventDispatcher ? JSON.parse(eventDispatcher) : [];
+      const keyName = this.getLocalStorageKeyName();
+      const value = localStorage.getItem(keyName);
+      if (value) {
+        return JSON.parse(value) || [];
+      } else {
+        return [];
+      }
     } else {
       return [];
     }
@@ -194,19 +207,10 @@ export default class EventDispatcher {
   }
 
   /**
-   * Generates a unique UUID every time it is called
-   * A combination of timestamp ,seperator and a random number
-   * @returns string
-   */
-  private getSessionUUID(): string {
-    return new Date().getTime() + '__DEL__' + Math.floor(Math.random() * 1000000);
-  }
-
-  /**
    * Checks the event queue length, processes them if full and then adds a new event to queue
    */
   private addAndProcessEvent(event: IEvent): void {
-    if (this.EVENT_QUEUE.length >= this.config.eventsToPostInSingleCall) {
+    if (this.EVENT_QUEUE.length >= this.eventsToPostInSingleCall) {
       this.handleEventSubmission(this.EVENT_QUEUE.slice(0));
       this.emptyQueue();
     }
@@ -231,34 +235,10 @@ export default class EventDispatcher {
   }
 
   /**
-   * method to handle submission of event
-   * Based on the configuration with which the Object of the class was created
-   * Either post data to server itself using url provided in config
-   *  or trigger the callback method provided in config
+   * method to handle submission of events.
    * @param data
    */
   private handleEventSubmission(data: any): void {
-    if (this.config.apiPathToPostEvents) {
-      this.postDataToServer(data);
-    } else if (typeof this.config.methodToPostEvents === 'function') {
-      this.config.methodToPostEvents(data);
-    }
-  }
-
-  /**
-   * Using native fetch api, post the data to the path provided in the config
-   * @param data
-   */
-  private postDataToServer(data: any): void {
-    if (this.config.apiPathToPostEvents) {
-      fetch(this.config.apiPathToPostEvents, {
-        body: JSON.stringify(data),
-        headers: {
-          Accep: 'application/json',
-          'Content-Type': 'application/json'
-        },
-        method: 'POST'
-      });
-    }
+    this.methodToPostEvents(data);
   }
 }

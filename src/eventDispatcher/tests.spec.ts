@@ -1,177 +1,165 @@
-import EventDispatcher from './index';
+import EventDispatcher, { IEvent } from './index';
 const globalAny: any = global;
+let eventsToPostInSingleCall = 3;
+
+const isLocalStorageAvailable = () => {
+  return !!(typeof window === 'object' && typeof window.localStorage === 'object');
+};
+
+if (isLocalStorageAvailable()) {
+  localStorage.setItem(
+    'event_test',
+    JSON.stringify([
+      {
+        key: 'value'
+      }
+    ])
+  );
+  eventsToPostInSingleCall--;
+}
+
+class EventDispatcherTest extends EventDispatcher {
+  constructor() {
+    super({
+      eventsToPostInSingleCall
+    });
+  }
+
+  public getLocalStorageKeyName() {
+    return 'event_test';
+  }
+
+  public eventEnricher(passedEvent: any) {
+    passedEvent.enrichTestKey = 'enrichTestValue';
+    return passedEvent;
+  }
+
+  public getStorageKeyPrefix(): string {
+    return '123';
+  }
+
+  public methodToPostEvents(data: IEvent[]): Promise<any> {
+    return fetch('http://mockapi.com/postevent', {
+      body: JSON.stringify(data),
+      headers: {
+        Accep: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      method: 'POST'
+    });
+  }
+}
+
+const handler: EventDispatcher = new EventDispatcherTest();
+try {
+  handler.clearEvents();
+  eventsToPostInSingleCall++;
+} catch (err) {
+  console.log('unable to clear events already in local storage. Some test depending on count might fail');
+}
+
+afterEach(() => {
+  handler.clearEvents();
+});
 
 test('EventDispatcher is exported', () => {
   expect(typeof EventDispatcher).toBe('function');
 });
 
-/**
- * Test cases when EventDispatcher has been initialized with api path in config
- */
-describe('EventDispatcher initialized with api params test cases', () => {
-  const handler: EventDispatcher = new EventDispatcher({
-    eventsToPostInSingleCall: 5,
-    apiPathToPostEvents: 'http://mockapi.com/postevent',
-    eventEnricher: (passedEvent: any) => {
-      passedEvent.enrichTestKey = 'enrichTestValue';
-      return passedEvent;
-    },
-    storageKeyPrefix: 'storageKeyPrefix'
-  });
-
-  const publicMethodsExpected = ['sendEvent', 'getEventList', 'clearEvents', 'getUUID'];
-
-  afterEach(() => {
-    handler.clearEvents();
-  });
-
-  test('apiPathToPostEvents was called with data && forceFlag works on sendEvent', () => {
-    let dataPostedViaFetch: any;
-
-    globalAny.fetch = jest.fn().mockImplementation((apiName) => {
-      return new Promise((resolve, reject) => {
-        dataPostedViaFetch = apiName;
-        resolve({
-          ok: true
-        });
-      });
-    });
-
+test('sendEvent method works correctly', () => {
+  let works = false;
+  try {
     handler.sendEvent(
       {
-        checkingPostWasCalled: 1
-      },
-      true
-    );
-    expect(dataPostedViaFetch).toBe('http://mockapi.com/postevent');
-  });
-
-  runTestSuit(handler, publicMethodsExpected);
-});
-
-/**
- * Test cases when EventDispatcher has been initialized with callback in config
- */
-describe('EventDispatcher initialized with callback function params test cases', () => {
-  const handler: EventDispatcher = new EventDispatcher({
-    eventsToPostInSingleCall: 5,
-    methodToPostEvents: (data) => {
-      return Promise.resolve('DATA_POSTED');
-    },
-    eventEnricher: (event) => {
-      event.enrichTestKey = 'enrichTestValue';
-      return event;
-    }
-  });
-
-  const publicMethodsExpected = ['sendEvent', 'getEventList', 'clearEvents', 'getUUID'];
-
-  afterEach(() => {
-    handler.clearEvents();
-  });
-
-  runTestSuit(handler, publicMethodsExpected);
-
-  test('EventDispatcher class called methodToPostEvents for submitting data', () => {
-    let callBackTriggered = false;
-    const submissionChecker: EventDispatcher = new EventDispatcher({
-      eventsToPostInSingleCall: 0,
-      methodToPostEvents: (data) => {
-        callBackTriggered = true;
-        return Promise.resolve('DATA_POSTED');
-      },
-      eventEnricher: (event) => {
-        event.enrichTestKey = 'enrichTestValue';
-        return event;
-      }
-    });
-
-    /**
-     * This event will be submitted immidiately because eventsToPostInSingleCall === 0
-     */
-    submissionChecker.sendEvent(
-      {
-        sampleEvent: true
+        postEventTestId: 12345
       },
       false,
       true
     );
-
-    submissionChecker.sendEvent(
-      {
-        sampleEvent: true
-      },
-      true,
-      true
-    );
-
-    expect(callBackTriggered).toBe(true);
-  });
+    works = true;
+  } catch (err) {
+    works = false;
+  }
+  expect(works).toBe(true);
 });
 
-/**
- * Common test cases for both types of instantiations
- * with api or with callback
- */
-function runTestSuit(handler: EventDispatcher, publicMethodsExpected: string[]) {
-  test('EventDispatcher class returns an EventDispatcher object with new keyword', () => {
-    expect(typeof handler).toBe('object');
+test('forceFlag works in sendEvent,  and methodToPostEvents is called', () => {
+  let dataPostedViaFetch: any;
+
+  globalAny.fetch = jest.fn().mockImplementation((apiName) => {
+    return new Promise((resolve, reject) => {
+      dataPostedViaFetch = apiName;
+      resolve({
+        ok: true
+      });
+    });
   });
 
-  for (const method of publicMethodsExpected) {
-    test(`EventDispatcher object has exposed method ${method}`, () => {
-      expect(Object.hasOwnProperty.call(Object.getPrototypeOf(handler), method)).toBe(true);
-    });
-  }
+  handler.sendEvent(
+    {
+      checkingPostWasCalled: 1
+    },
+    true
+  );
+  expect(dataPostedViaFetch).toBe('http://mockapi.com/postevent');
+});
 
-  test('sendEvent && getEventList method works correctly', () => {
-    handler.sendEvent({
-      postEventTestId: 12345
-    });
-    const event = handler.getEventList();
-    expect(event[0].postEventTestId).toBe(12345);
+test('getEventList method works correctly', () => {
+  handler.sendEvent({
+    postEventTestId: 12345
   });
+  const event = handler.getEventList();
+  expect(event[0].postEventTestId).toBe(12345);
+});
 
-  test('clearEvents method working correctly', () => {
-    handler.sendEvent({
-      enricherTest: 1
-    });
-    handler.clearEvents();
-    const eventList = handler.getEventList();
-    expect(eventList.length).toBe(0);
+test('clearEvents method working correctly', () => {
+  handler.sendEvent({
+    enricherTest: 1
   });
+  handler.clearEvents();
+  const eventList = handler.getEventList();
+  expect(eventList.length).toBe(0);
+});
 
-  test('getUUID method working correctly', () => {
-    expect(typeof handler.getUUID()).toBe('string');
+test('Submitting more events then eventsToPostInSingleCall causes an empty queue', () => {
+  handler.sendEvent({
+    enricherTest: 1
   });
-
-  test('EventDispatcher called eventEnricher and appended extra info', () => {
-    handler.sendEvent({
-      enricherTest: 1
-    });
-    const event = handler.getEventList();
-    expect(event[0].enrichTestKey).toBe('enrichTestValue');
+  handler.sendEvent({
+    enricherTest: 2
   });
-
-  test('One EventDispatcher instance is appending same UUID for all events', () => {
-    handler.sendEvent({
-      sampleEvent: 1
-    });
-
-    handler.sendEvent({
-      sampleEvent: 2
-    });
-
-    const [event1, event2] = handler.getEventList();
-    expect(event1.EventDispatcherUuid).toBe(event2.EventDispatcherUuid);
+  handler.sendEvent({
+    enricherTest: 3
   });
+  const eventList = handler.getEventList();
+  expect(eventList.length).toBe(1);
+});
 
-  test('Two EventDispatcher instances have different UUID', () => {
-    const handler1 = new EventDispatcher({
-      eventsToPostInSingleCall: 5,
-      apiPathToPostEvents: 'http://mockapi.com/'
-    });
+test('getSessionUUID method working correctly', () => {
+  expect(typeof handler.getUUID()).toBe('string');
+});
 
-    expect(handler.getUUID() === handler1.getUUID()).toBe(false);
+test('EventDispatcher called eventEnricher', () => {
+  handler.sendEvent({
+    sampleEvent: 1
   });
-}
+  const event = handler.getEventList();
+  expect(event[0].enrichTestKey).toBe('enrichTestValue');
+});
+
+test('One EventDispatcher instance is appending same UUID for all events', () => {
+  console.log(handler.getEventList(), '_________________');
+  handler.sendEvent({
+    enricherTest: 1
+  });
+  handler.sendEvent({
+    enricherTest: 2
+  });
+  const [event1, event2] = handler.getEventList();
+  expect(event1.eventDispatcherUuid).toBe(event2.eventDispatcherUuid);
+});
+
+test('Two EventDispatcher instances have different UUID', () => {
+  const handler1 = new EventDispatcherTest();
+  expect(handler.getUUID() === handler1.getUUID()).toBe(false);
+});

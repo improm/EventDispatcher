@@ -13,7 +13,7 @@
     "test": "jest --config jestconfig.json",
     "jestAndNotifyCoveralls": "jest --config jestconfig.json --coverageReporters=text-lcov | coveralls",
     "testCoverage": "npm run test && npm run showTestReport",
-    "showTestReport": "open './testReport/lcov-report/index.html'",
+    "showTestReport": "open './coverage/lcov-report/index.html'",
     "cleanOutputDir": "rimraf lib",
     "build": "npm run cleanOutputDir && tsc",
     "prettier": "prettier --write '**/*.{ts,tsx,js,json}' \"src/**/*.js\" --config prettier.config.js",
