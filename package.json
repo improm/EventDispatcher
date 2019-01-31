@@ -1,6 +1,6 @@
 {
   "name": "uieventdispatcher",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Process events, post events to server in batch using simple configuration",
   "files": [
     "lib/**/*"
