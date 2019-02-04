@@ -7,7 +7,13 @@ Persists events in case of browser reload, closing the browser window (local sto
 
 ## Usage
 
-EventDispatcher is an abstract class. So you need to impliment a class that extends `EventDispatcher`. Create a service `EventDispatcherService` that extends `EventDispatcher`.
+Install it as a dev dependency in your project.
+
+``` javasctipt
+npm install --save uieventdispatcher
+```
+
+ Create a class `EventDispatcherService` in your codebase that extends `EventDispatcher`. Just use the code below and modify according to your needs. 
 
 ```javascript
 // EventDispatcherService.js
@@ -21,20 +27,27 @@ export class EventDispatcherService extends EventDispatcher {
   }
 
   eventEnricher(event) {
-    // Modify event if needed
+    // attach addtional data to each  event if needed
     event.userId = '1KL';
+    // dont miss out returning the event back
     return event;
   }
 
   methodToPostEvents(data) {
+    // Replcae the url with url of your backend api where you want to submit events
     return fetch("http://backend-url.com/api/analytics", {
       body: JSON.stringify(data),
       headers: {
-        Accept: "application/json",
         "Content-Type": "application/json"
       },
       method: "POST"
     });
+  }
+
+  getLocalStorageKeyName(){
+    //  Provide a unique name here. Something constant for an user. 
+    // Dont use timestamp for eg. 
+    return 'APP_NAME'+ 'userIdIfYouHave';
   }
 }
 
@@ -44,7 +57,7 @@ export default eventDispatcher;
 
 ```
 
-In your application code
+Then use this service in rest of your application code. Now you just need to use `sendEvent` method. Rest will be handled by `EventDispatcherService`.
 
 ``` javascript
 import eventDispatcher from 'EventDispatcherService';
@@ -71,7 +84,16 @@ eventDispatcher.sendEvent({ page: 2});
 
 ## Config
 
-`EventDispatcher` supports following config keys:
+Any class extending `EventDispatcher` needs to call `super` in constructor with these supported config values.
+
+```javascript
+  export class EventDispatcherService extends EventDispatcher {
+  constructor() {
+    super({
+      ...config
+    });
+  }
+```
 
 | Name                     | Type                  |   Description  |
 | ------------------------ | --------------------- | -------- | --- |
@@ -79,20 +101,20 @@ eventDispatcher.sendEvent({ page: 2});
     
 
 
-## Abstract methods
+##  Methods to be implemented
 
-The application need to extend `EventDispatcher` class and impliment these functions.
+A class that extends `EventDispatcher` has to implement these methods.
 
 | Name                     | Type                  |   Description  |
-| ------------------------ | --------------------- | -------- | --- |
+| ------------------------ | --------------------- | -------------- |
 | eventEnricher            | (event: `IEvent`) => any  |  Triggered every time `sendEvent` is called, can be used to append additonal data to each event.|
 | methodToPostEvents       | (data: any) =>  Promise | Triggered when after sendEvent method has been called `eventsToPostInSingleCall` times atleast.|
 | getLocalStorageKeyName   | () => string  | Provide a unique string which will be used to store event in `localStorage`. Should not change on page reload. Bad example: `timeStamp`, good example: a`ppName_userId` |
 
 ## Supported methods
 
-| Name         | arguments in order                                          | Description                                                                                                                                                                                                                                                                   |
-| ------------ | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Name         | arguments in order                                          | Description |
+| ------------ | ----------------------------------------------------------- | ----------- |
 | sendEvent    | eventToSend: IEvent; forceful = false; consoleEvent = false | `eventToSend`: event data; `forceful`: ignore the check for `eventsToPostInSingleCall` and call `methodToPostEvents` or `apiPathToPostEvents` immidiately; `consoleEvent`: console.log the event being sent to `eventToSend` method. Called after `eventEnricher` if provided |
 | getEventList | no arguments                                                | Returns the events currently present with eventDispatcher instance                                                                                                                                                                                                            |
 | clearEvents  | no arguments                                                | Clear the events currently present with eventDispatcher instance                                                                                                                                                                                                              |
