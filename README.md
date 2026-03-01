@@ -96,7 +96,7 @@ Any class extending `EventDispatcher` needs to call `super` in constructor with 
 ```
 
 | Name                     | Type                  |   Description  |
-| ------------------------ | --------------------- | -------- | --- |
+| ------------------------ | --------------------- | -------------- |
 | eventsToPostInSingleCall | `number`              | Wait for these many events before triggering `methodToPostEvents`|
     
 
